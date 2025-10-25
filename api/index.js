@@ -23,12 +23,62 @@ app.use(express.json());
 
 /* ------------ Load data ------------ */
 // Taruh data.json di root repo (sejajar vercel.json)
-const DATA_PATH = path.join(process.cwd(), 'data.json');
+// ─── Ganti fungsi load() lama ───
 
-function load() {
-  const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-  return JSON.parse(raw);
+// ENV yang harus kamu isi di Vercel Project Settings:
+// GH_REPO="owner/repo"          contoh: "sigitars9-hue/api-gv-comics"
+// GH_BRANCH="main"              (default boleh tetap 'main')
+// GITHUB_TOKEN (optional, untuk rate limit tinggi)
+
+const GH_REPO   = process.env.GH_REPO;
+const GH_BRANCH = process.env.GH_BRANCH || 'main';
+const GH_TOKEN  = process.env.GITHUB_TOKEN || '';
+
+const RAW_URL = `https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/data.json`;
+
+let __cache = { etag: null, data: null, ts: 0 };
+
+async function load() {
+  // fallback lokal kalau env belum di-set (mis. saat dev di localhost)
+  if (!GH_REPO) {
+    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
+    return JSON.parse(raw);
+  }
+
+  // cache 10 detik
+  const now = Date.now();
+  if (__cache.data && now - __cache.ts < 10_000) return __cache.data;
+
+  const headers = {};
+  if (GH_TOKEN) headers['Authorization'] = `token ${GH_TOKEN}`;
+  if (__cache.etag) headers['If-None-Match'] = __cache.etag;
+
+  const resp = await fetch(RAW_URL, { headers });
+
+  if (resp.status === 304 && __cache.data) {
+    __cache.ts = now;
+    return __cache.data;
+  }
+
+  if (!resp.ok) {
+    // fallback terakhir ke cache atau file lokal
+    if (__cache.data) return __cache.data;
+    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
+    return JSON.parse(raw);
+  }
+
+  const text = await resp.text();
+  const json = JSON.parse(text);
+
+  __cache = {
+    etag: resp.headers.get('etag'),
+    data: json,
+    ts: now,
+  };
+
+  return json;
 }
+
 
 /* ------------ Utils ------------ */
 function toCard(s) {
