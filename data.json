@@ -1,6 +1,56 @@
 {
   "series": [
     {
+      "title": "asd",
+      "slug": "asd",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "description": "dafsfassafssaf",
+      "genres": [
+        "Action",
+        "Fantasy",
+        "Seinen"
+      ],
+      "tags": [],
+      "cover": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgE0BlorHWlbbzSxekgU1VqNZCS7zN94Jg4yIWIE2GtKzNiTImfd19Zu-eqQUfRL0d2hyphenhyphen6TQcTcZHqtVXU0boES-PQZUrGJEZX7_LNwC340Sn16m99vkZ1aWQV3Kws6MkyGhhurh2OsLgegCXh-xZ49mBOq1nyFhIReFdRC3VV1Hd5WGTZdpEqsPHRVvV4/s1600/0.westmanga.fun.jpg",
+      "backdrop": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgE0BlorHWlbbzSxekgU1VqNZCS7zN94Jg4yIWIE2GtKzNiTImfd19Zu-eqQUfRL0d2hyphenhyphen6TQcTcZHqtVXU0boES-PQZUrGJEZX7_LNwC340Sn16m99vkZ1aWQV3Kws6MkyGhhurh2OsLgegCXh-xZ49mBOq1nyFhIReFdRC3VV1Hd5WGTZdpEqsPHRVvV4/s1600/0.westmanga.fun.jpg",
+      "chapters": [
+        {
+          "id": "asd-001",
+          "number": 1,
+          "title": "Chapter 1",
+          "pages": [
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgE0BlorHWlbbzSxekgU1VqNZCS7zN94Jg4yIWIE2GtKzNiTImfd19Zu-eqQUfRL0d2hyphenhyphen6TQcTcZHqtVXU0boES-PQZUrGJEZX7_LNwC340Sn16m99vkZ1aWQV3Kws6MkyGhhurh2OsLgegCXh-xZ49mBOq1nyFhIReFdRC3VV1Hd5WGTZdpEqsPHRVvV4/s1600/0.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiX42knLLmEMDBkOhGxqWVEG1F-a0-yqmiTZQaygT9XukwTGMFcu_8oUfwFTxeWfsTfXgznP25i5r2gFlP5q9kGqsqwWJ_fpVm5bQ9kNKn0UQH3hmCTsf7cwdaXbDiMO_d_WCkvgYD7B6P_yIWBT47EpaS_ksbJq0a3Am2DRngffdqgPyfEANEzUuNtbq8/s1600/2.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiNcM9EF2J-UlXm3b1bJ8CE8H_s-2gfxTupN_NyObA-KHKMkMcfzhcXwww3zsRtpuKtPrLvrUJ3ALSeoGKlpTvpm4kWqm4zgQlWhI8-xmdx-1H4mIBxy6-OOCvrYQpbMwRuvREpnwVAnTz5ka57oLmNFo6MvCMNH9D5EgPn7Zmau_Y0Pqn3DNnXbIFWLiA/s1600/3.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhPJI454FH4b8RcgSBlFfnO9K3lJ9TIHobdUgd118U1Ueag4aUNKhu_MYGRv2XDVNxLbFOhbpqULuaBenEkIptjjdVrC6u-kVlNjmcYB9lQUA2Eg5j63xQ0dbPbGCaHKM5izmDl1jG2LmxTYDtC-48vQbKI89m5vxidHeJvgYks7to3N_ng17htim9vjQ4/s1600/4.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEioAObOSZihnufdnhF0WAqrOKFxhAo75KJHI4WF5z2TkZgo5AH3T4FUnDhPfuNNqbpSKzYKTwGUmqKhpGZ6xCa10rSuLGfk3-6D-8hta8nP4lyt3GGGKjcX6CSgxqAbp45C6QcCqdZljpPBojySjymgc-H4LP_tFyL80bjl8tmvcbp_a3_vbt99jOgx-mc/s1600/5.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEislmPqjo56IL8JrA2vdUpQp8ob5FeWm-GrZc73Z7JInKO83oORccYNbKl3PHSVednnrINNHHNUaeirzqdLGYAdHCuzwzW27Mn-_lGN1q2TVaVymOLgqsoHhxIJxmyr7L1O97mjO9A0in1eYe191R_RAIngujsO7HCbDvA4ohhPyLJ0ntGi-sI45tIX_9I/s1600/6.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiO2ZvAij9TAmic1RzmB3HQT_tbWlu8hnv6spZ3-680JrzCdHFCWe_u11fBmtO2ENPRGr2RxfjhMyh_SqTFgcSdn-g5qPU4DNYSiOtfrQEqSGAxFp_c9cXJKO0ILju4FaHZoRg-RE1F9ICCP-i6QxUVjwTT-dLLMQEPKeNWzcwA-_4UR00O0r_moeB2TPU/s1600/7.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjYlcIcYeiFKVBG8e9PGeDgYF0Dp0Yt6SkvC3KrjGOFVX42jotEmsnibc7du53rmUzYr1IJDpZffdTa1tWjFNlg-L-ln76vk4D3iskTxUzq-vfsU81jCKcZB9toY6XkmIrwZS09UXkpeT8O0WytrZejmf78WOvMZ7A5IqDUlEPFwGCkz44Yl__Vg9i4qDg/s1600/8.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-NN_UtQlwwFDiSroG9R1pfCwW7VWY1y6arVZUrsFEt1dxn8d9yndZnhwIxSon8E0ypqcx5bH766JotiLKVEYXZGWVk7T8cZzPJ44xjhTFuYUS-61dQPwozh_F8IbCsJSA8diR0XcsTHgERbi75t7MR8rcgkfEimw5sUq4fkI-3XkPsllk-DFmDuNU3yE/s1600/9.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjp0jpXKel6jVVYzj7s5zar4IXUuL-M7x-6A7yA1mkOOIaWJY8VW2ndacwyqfpOMmaP9TG7YttIGvs_9-zaag9i3ZYyEEokoU1pT9zwKvbfwJHhSYFfnM82_ZhYRxW577D43smtvAe0cRlePSk3ftFPoQpHclQ86XVRNEFWm43wvzAbVQKF5KAf6K5a8qE/s1600/10.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhIy8b9IX7Sz5flkytCmebZ5gq51dtrZpeE-TVQjpq9fOLH_AcfpmTmoWf56lhD5JtRQ_Wkze8KLJmjMfm6JCGCvsjK9OldfgXI29hqU55gJg4Mi9bynvarNOcPbLmmTMSWflop5aGZdrTuvik-8BpVRHhfJj86ZBsdPGfQA1w7Zjf6XUq6rFWPb6MBRfc/s1600/11.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiRiRmZB21bGA4Ss9TN2Cj_RQbmwegSjp46XydN9SRfnMgvCwd9hVY5D3U2CeMmrXVeofZZfGXNJ9SIWU3Y4-6NUYjlcR03h0uqUNgk_F41cH3Lf5_lYUtXCn32SKBvbr2exsTwFQOmx08mkFZJ_WRvCeSKg_YTd2MJJpB_fpE1rZuEMR3JfHc_6c8GX9M/s1600/12.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEid4wIRSk0lLCQywFeFN93FgegvU3YppKD6FXeXSCG8Jo_-jxFa85k-vjhQEn47hyphenhyphenH20WDTjP7vPlUMUKyQq6LHniJmO1Tq_P2hLNfu9GVP6zSQJ3r1A8f3-4WaWL18iCI1UpTeGxH5-OH6_xAggcWhDduyKmLNOjir-xndbwHUq_YBzKRNm9T9NsdLsh0/s1600/13.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhJ5ijTsGr6Osy2reomFAvabI8XakmhVZdhQFPfI9WIrpqTwLCo22gbxD0CCgCl_ZBeyx4rHWuuhtIj0S0pw-1wEzYBoqf1EKL5ZfTS_ZZdGHNzrsxCvC07Um_oFaHBSAOdN_dzm98C3qEkm4azuu3LGXuIwq-Z04FAExBPpgokthIXJKQUoOR7lRdeN7g/s1600/14.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhYq9LUEIHoeK04ckKu0fc_2yD2RhIxI4iXIijlY2WnTOI2TCelAgz7rZViKASTngNkCsEcXJ3N1DOvdEXxQqI_s6RCLjFzFSRB2R6C6uXddfpZmf726F5VhIMYIqjZkLgrGOoxkvTkUY2I2ChJap9seiSIKGEbuZWiUyGLXeAMT_y_EL_N5fdPlSZyLUI/s1600/15.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiIdiSub0fWhQ7XYFL_huYlU6_IXs83vBZ4bGs2NSIO_qJ-LJJRuc5-j_EyYJ0z-votvf6WWMQfPS96bOZ6PEdzJO2onNXbPDi2V5O3vyHE-YdLM_WVQSCBUs_xzayCkx5xW0hWvJtb9ZVfrPaHVCNEu9xigH5k2OktgOFWwOQmHVWIni_eHPu7vGUB05s/s1600/16.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgh9RHI3u5KUlC5aCqIeXuxorz8Ul7dgvip6MoUpBS7hSieapyLKeF20pZ9dezmHJU0spfqtIKPBV2GpCIePxBKykPiRd-LvCeFcut6hlinOgBx_vp_9UIJ3fbGMwIBJ3UxzWJcaHpt4HrkILxEm0GGYUeKDLLLPSy2lak-fWmKydedZc5tCo1l6Nh2boU/s1600/17.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg1LchyPLvvGhOHKNFwt4XL7SlqdI0jOT239GHHO5SewUiQyRJ5PN9ETKeusnrjPxaW9TKIeJKKvuEcufQ32UVN-Z-JxM5Q_dRYXnt8JeCJh7iDNB9tE4DW5WeGwO02rWCjXBzQOvxwsPe_RGIj52sBY46t5fc4aEqNeqq9-mgJhuyJ7H4Mt9ZBlof6ZKc/s1600/18.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiMcyUCp1VQor1jpa1XW3g0EjB5Eay4DzPRk1a0j_6w6WOCl7ua7oW9gLEbhnmdCVm4AVl4F2jj6kHX6jNw6a5TGrox_btTxJu18bhC6gzgCtuzrLKzMpB2BghwfV8qo0ur10uEn162zzAlsDb9IfQLk2GdP8hXJsRwG-q2EqIgtf5_RHZ-qW0wsnsmCus/s1600/19.westmanga.fun.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiOtMtxEUvqWA2LPBhUFnnP4vuHlXwxn6dHCdu8k4GEK7FMFjiISFu3VcypyScckck6n3o42wYtNMtM3PcndfmCEPfmhoTNKR7fmctPtig5zISCDuFq3g_PpwUCLh3LDAtbOVghyphenhyphennm-B8vH0CZsm_ZbX9OKoZsfPU36KlWmu6Hmo7RQ4-it_ns-bvkDp9Y/s1600/20.westmanga.fun.jpg"
+          ],
+          "publishedAt": "2025-10-24T21:44:00.000Z",
+          "thumbnail": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgE0BlorHWlbbzSxekgU1VqNZCS7zN94Jg4yIWIE2GtKzNiTImfd19Zu-eqQUfRL0d2hyphenhyphen6TQcTcZHqtVXU0boES-PQZUrGJEZX7_LNwC340Sn16m99vkZ1aWQV3Kws6MkyGhhurh2OsLgegCXh-xZ49mBOq1nyFhIReFdRC3VV1Hd5WGTZdpEqsPHRVvV4/s1600/0.westmanga.fun.jpg"
+        }
+      ],
+      "createdAt": "2025-10-25T04:45:25.943Z",
+      "updatedAt": "2025-10-25T04:45:25.943Z"
+    },
+    {
       "title": "dsfdsf",
       "slug": "ddfsfsfd",
       "type": "Manhwa",
