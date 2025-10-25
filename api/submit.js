@@ -1,20 +1,5 @@
 // api/submit.js
 export default async function handler(req, res) {
-  // --- CORS ---
-  const ORIGINS = [
-    'http://localhost:5173',
-    'https://komikkk.vercel.app', // FE production
-    // tambahkan custom domain FE jika ada
-  ];
-  const origin = req.headers.origin || '';
-  const allowOrigin = ORIGINS.includes(origin) ? origin : ORIGINS[0];
-
-  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
-  res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-submit-secret');
-
-  if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method Not Allowed' });
