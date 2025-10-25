@@ -1,6 +1,64 @@
 {
   "series": [
     {
+      "title": "dfdsfdd",
+      "slug": "dfdsfdd",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "description": "dscasfasfasafsfafsfs",
+      "genres": [
+        "School",
+        "Martial Arts",
+        "Mystery",
+        "Action",
+        "Seinen",
+        "Wuxia"
+      ],
+      "tags": [],
+      "cover": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "backdrop": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "chapters": [
+        {
+          "id": "dfdsfdd-001",
+          "number": 1,
+          "title": "Chapter 1",
+          "pages": [
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhgFqtYz2E5hNmZRBOX4whwhwMgurCY1gFLGNS0mdl5W1xh6aDpw5XbihDISF-FiSwEx8TJIlCP3u9A9OQyLAtBM50c_4S3TmcJ30yrXEmyHxm-sNgrKHOHdTkICvWnE6Bq0xB9oG95QQdB_C_cuzHm4YoGG5tQnmONweTOoDb75ktc83cX_s2YPatf9dnK/s1600/cover%20ch10.jpg",
+            "https://i.ibb.co.com/1thQKPMP/SE-000.jpg",
+            "https://i.ibb.co.com/9mWprxTz/SE-001.jpg",
+            "https://i.ibb.co.com/35Pmf62G/SE-002.jpg",
+            "https://i.ibb.co.com/9m1N1wQq/SE-003.jpg",
+            "https://i.ibb.co.com/6Jyfr5b1/SE-004.jpg",
+            "https://i.ibb.co.com/Zzxw23k8/SE-005.jpg",
+            "https://i.ibb.co.com/KzpGZdHc/SE-006.jpg",
+            "https://i.ibb.co.com/7JkfMJth/SE-007.jpg",
+            "https://i.ibb.co.com/1GsLmxKp/SE-008.jpg",
+            "https://i.ibb.co.com/whJfrbdk/SE-009.jpg",
+            "https://i.ibb.co.com/Fk201JvY/SE-010.jpg",
+            "https://i.ibb.co.com/wZsSb6YH/SE-011.jpg",
+            "https://i.ibb.co.com/gLcH4VfM/SE-012.jpg",
+            "https://i.ibb.co.com/3yffXbLm/SE-013.jpg",
+            "https://i.ibb.co.com/HT5Y8SsJ/SE-014.jpg",
+            "https://i.ibb.co.com/MkyZfwRB/SE-015.jpg",
+            "https://i.ibb.co.com/MxxKDxZv/SE-016.jpg",
+            "https://i.ibb.co.com/5XrcYYX7/SE-017.jpg",
+            "https://i.ibb.co.com/sGQ5NCy/SE-018.jpg",
+            "https://i.ibb.co.com/1wT5c63/SE-019.jpg",
+            "https://i.ibb.co.com/CpBTGTmV/SE-020.jpg",
+            "https://i.ibb.co.com/sdbnKXJp/SE-021.jpg",
+            "https://i.ibb.co.com/pj819jPV/SE-022.jpg",
+            "https://i.ibb.co.com/G3Wnf9mc/SE-023.jpg",
+            "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhTU0vhWSaI4-nFGHgNdyE3naknRfqEfxIEny3I5qy5ZEwIQLzwsN7sqznpLFPlCgiWPTh1YIIhLwoUHiwaTodOTsrlDqNAkhmMhqE9vrwu16EdJ-q8ks0cXW9qky99E_-pPkNhHXhixcnbjCpA4p_PonL3cQREQoMGT59uZZQr-lgsWDQZrCRMaRCgiofR/s1600/closing%20new.jpg"
+          ],
+          "publishedAt": "2025-10-24T23:36:00.000Z",
+          "thumbnail": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhgFqtYz2E5hNmZRBOX4whwhwMgurCY1gFLGNS0mdl5W1xh6aDpw5XbihDISF-FiSwEx8TJIlCP3u9A9OQyLAtBM50c_4S3TmcJ30yrXEmyHxm-sNgrKHOHdTkICvWnE6Bq0xB9oG95QQdB_C_cuzHm4YoGG5tQnmONweTOoDb75ktc83cX_s2YPatf9dnK/s1600/cover%20ch10.jpg"
+        }
+      ],
+      "createdAt": "2025-10-25T06:37:29.709Z",
+      "updatedAt": "2025-10-25T06:37:29.709Z"
+    },
+    {
       "title": "asdsasd",
       "slug": "asdsasd",
       "type": "Manhwa",
