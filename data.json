@@ -1,6 +1,29 @@
 {
   "series": [
     {
+      "title": "asdsads",
+      "slug": "asdsads",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "description": "saffsasffsfasfsasfsafaasffsafs",
+      "genres": [
+        "Sci-Fi",
+        "Martial Arts",
+        "Supernatural",
+        "Romance"
+      ],
+      "tags": [],
+      "cover": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "backdrop": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "rating": 9,
+      "views": 3423,
+      "bookmarks": 342434,
+      "chapters": [],
+      "createdAt": "2025-10-25T06:05:22.056Z",
+      "updatedAt": "2025-10-25T06:05:22.056Z"
+    },
+    {
       "title": "ddsdg",
       "slug": "ddsdg",
       "type": "Manhwa",
@@ -96,5 +119,6 @@
       "title": "Pengumuman Maintenance",
       "createdAt": "20 July 2025"
     }
-  ]
+  ],
+  "chapters": {}
 }
