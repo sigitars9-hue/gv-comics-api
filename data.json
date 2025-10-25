@@ -1,6 +1,32 @@
 {
   "series": [
     {
+      "title": "Nartoh",
+      "slug": "nartoh",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "year": 2029,
+      "author": "Gwej",
+      "artist": "Gwej",
+      "description": "Anuana ahahshabana ajajajajajaja",
+      "genres": [
+        "Psychological",
+        "Mecha",
+        "Comedy",
+        "Seinen"
+      ],
+      "tags": [],
+      "cover": "https://i.ibb.co.com/1thQKPMP/SE-000.jpg",
+      "backdrop": "https://i.ibb.co.com/1thQKPMP/SE-000.jpg",
+      "rating": 9,
+      "views": 200,
+      "bookmarks": 5464,
+      "chapters": [],
+      "createdAt": "2025-10-25T06:22:16.672Z",
+      "updatedAt": "2025-10-25T06:22:16.672Z"
+    },
+    {
       "title": "anuuuuuuuuuuuuuuu",
       "slug": "anuuuuuuuuuuuuuuu",
       "type": "Manhwa",
