@@ -1,5 +1,5 @@
 // api/submit.js — BE (Api Komikk)
-// Mendukung submit Series (lama) + Chapter-only (baru)
+// Mendukung submit Series (lama) + Chapter-only 
 
 export default async function handler(req, res) {
   try {
