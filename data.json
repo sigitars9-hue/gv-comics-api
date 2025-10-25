@@ -1,6 +1,25 @@
 {
   "series": [
     {
+      "title": "wk",
+      "slug": "wk",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "description": "afadsfsfsfdfsdfdsfdfgdgf",
+      "genres": [
+        "School",
+        "Drama",
+        "Sci-Fi"
+      ],
+      "tags": [],
+      "cover": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "backdrop": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "chapters": [],
+      "createdAt": "2025-10-25T06:10:09.828Z",
+      "updatedAt": "2025-10-25T06:10:09.828Z"
+    },
+    {
       "title": "Nartoh",
       "slug": "nartoh",
       "type": "Manhwa",
