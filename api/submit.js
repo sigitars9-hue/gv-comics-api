@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
 
     // ENV yang harus ada di Vercel (Project API):
-    const GH_TOKEN   = process.env.GITHUB_TOKEN;         // classic/fine-grained token
+    const GH_TOKEN   = process.env.GITHUB_TOKEN;         // classic/fine-grained toke
     const GH_REPO    = process.env.GH_REPO;              // format: "owner/repo", contoh "sigitars9-hue/api-gv-comics"
     const GH_BRANCH  = process.env.GH_BRANCH || 'main';  // branch target
 
