@@ -1,6 +1,31 @@
 {
   "series": [
     {
+      "title": "Honkai Impact",
+      "slug": "honkai-impact",
+      "type": "Manhwa",
+      "format": "Webtoon",
+      "status": "Ongoing",
+      "year": 2023,
+      "description": "fdsfsfsddfsdfffsdsfdf",
+      "genres": [
+        "Comedy",
+        "Action",
+        "Martial Arts",
+        "School",
+        "Romance"
+      ],
+      "tags": [],
+      "cover": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "backdrop": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1PwvwLD2F59oWcFaYls9vQu04yTRd5ACrGLCepHGeNhRfEt9qQg5CbN3BJb_-1qSldvnW6gwYNiVjSsGhYB9F6OnCa8ekgeoCo2AttrkNErsee1Ic06OhGGKE51rEta8npIUR1T-G9kOek1SHTze7cLpBBA2fnWZeZlhsoaUeR2wm95vrel5XoMasqf4/s1600/1.westmanga.fun.jpg",
+      "rating": 9,
+      "views": 342352352,
+      "bookmarks": 52325,
+      "chapters": [],
+      "createdAt": "2025-10-25T05:03:55.722Z",
+      "updatedAt": "2025-10-25T05:03:55.722Z"
+    },
+    {
       "title": "asd",
       "slug": "asd",
       "type": "Manhwa",
