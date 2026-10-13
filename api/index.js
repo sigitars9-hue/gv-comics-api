@@ -132,17 +132,39 @@ async function load() {
     return cache.data;
   }
 
+  
   const results = await Promise.all(
     BUCKETS.map(async (bucket) => {
       try {
-        return await fetchPublicBucket(bucket);
+        const data = await fetchPublicBucket(bucket);
+
+        if (!data) {
+          console.error(
+            `[GitHub] ${bucket}.json gagal dibaca. ` +
+            `Periksa HTTP status pada log sebelumnya.`
+          );
+        }
+
+        return data;
       } catch (error) {
-        console.error(`Gagal memuat ${bucket}:`, error.message);
+        console.error(
+          `[GitHub] ${bucket}.json:`,
+          error.message
+        );
         return null;
       }
     })
   );
-const successfulBuckets = results.filter(Boolean).length;
+
+  const successfulBuckets = results.filter(Boolean).length;
+
+  if (successfulBuckets === 0) {
+    throw new Error(
+      `Gagal membaca semua file: ${GH_REPO}, branch ${GH_BRANCH}. ` +
+      `Periksa log HTTP 404/403 atau error parsing JSON di Vercel.`
+    );
+  }
+
 
 if (successfulBuckets === 0) {
   throw new Error(
