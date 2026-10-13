@@ -1,14 +1,11 @@
 // api/index.js
 import express from 'express';
 import cors from 'cors';
-import fs from 'node:fs';
-import path from 'node:path';
 
 const app = express();
 
-/* ------------ CORS global (wajib di Vercel) ------------ */
+/* ------------ CORS global ------------ */
 function corsHeaders(req, res, next) {
-  // kalau mau spesifik, ganti '*' jadi 'http://localhost:5173' dan domain produksi kamu
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -16,78 +13,101 @@ function corsHeaders(req, res, next) {
   next();
 }
 
-app.use(cors());        // tetap boleh
-app.use(corsHeaders);   // pastikan header selalu ada
-
+app.use(cors());
+app.use(corsHeaders);
 app.use(express.json());
 
-/* ------------ Load data ------------ */
-// Taruh data.json di root repo (sejajar vercel.json)
-// ─── Ganti fungsi load() lama ───
-
-// ENV yang harus kamu isi di Vercel Project Settings:
-// GH_REPO="owner/repo"          contoh: "sigitars9-hue/api-gv-comics"
-// GH_BRANCH="main"              (default boleh tetap 'main')
-// GITHUB_TOKEN (optional, untuk rate limit tinggi)
-
-const GH_REPO   = process.env.GH_REPO;
+/* ------------ GitHub Config ------------ */
+const GH_REPO   = process.env.GH_REPO || 'sigitars9-hue/api-gv';
 const GH_BRANCH = process.env.GH_BRANCH || 'main';
 const GH_TOKEN  = process.env.GITHUB_TOKEN || '';
 
-const RAW_URL = `https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/data.json`;
+const DATA_FILES = ['data1.json', 'data2.json', 'data3.json'];
 
-let __cache = { etag: null, data: null, ts: 0 };
+let __cache = { data: null, ts: 0 };
 
-async function load() {
-  // fallback lokal kalau env belum di-set (mis. saat dev di localhost)
-  if (!GH_REPO) {
-    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-    return JSON.parse(raw);
-  }
-
-  // cache 10 detik
-  const now = Date.now();
-  if (__cache.data && now - __cache.ts < 10_000) return __cache.data;
-
+async function fetchJsonFromGithub(filename) {
+  const url = `https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/data/${filename}`;
   const headers = {};
   if (GH_TOKEN) headers['Authorization'] = `token ${GH_TOKEN}`;
-  if (__cache.etag) headers['If-None-Match'] = __cache.etag;
 
-  const resp = await fetch(RAW_URL, { headers });
+  try {
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) {
+      console.error(`Gagal memuat ${filename}: status ${resp.status}`);
+      return null;
+    }
+    return await resp.json();
+  } catch (err) {
+    console.error(`Error fetch ${filename}:`, err);
+    return null;
+  }
+}
 
-  if (resp.status === 304 && __cache.data) {
-    __cache.ts = now;
+async function load() {
+  const now = Date.now();
+  // Cache data 10 detik agar hemat kuota request GitHub
+  if (__cache.data && now - __cache.ts < 10_000) {
     return __cache.data;
   }
 
-  if (!resp.ok) {
-    // fallback terakhir ke cache atau file lokal
-    if (__cache.data) return __cache.data;
-    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-    return JSON.parse(raw);
+  try {
+    const results = await Promise.all(
+      DATA_FILES.map((file) => fetchJsonFromGithub(file))
+    );
+
+    const merged = {
+      series: [],
+      chapters: {},
+      announcements: [],
+    };
+
+    const seenSlugs = new Set();
+
+    for (const json of results) {
+      if (!json) continue;
+
+      if (Array.isArray(json.series)) {
+        for (const item of json.series) {
+          if (item?.slug && !seenSlugs.has(item.slug)) {
+            seenSlugs.add(item.slug);
+            merged.series.push(item);
+          }
+        }
+      }
+
+      if (json.chapters && typeof json.chapters === 'object') {
+        Object.assign(merged.chapters, json.chapters);
+      }
+
+      if (Array.isArray(json.announcements)) {
+        merged.announcements.push(...json.announcements);
+      }
+    }
+
+    __cache = { data: merged, ts: now };
+    return merged;
+  } catch (err) {
+    console.error('Error saat merge data:', err);
+    return __cache.data || { series: [], chapters: {}, announcements: [] };
   }
-
-  const text = await resp.text();
-  const json = JSON.parse(text);
-
-  __cache = {
-    etag: resp.headers.get('etag'),
-    data: json,
-    ts: now,
-  };
-
-  return json;
 }
 
+/* ------------ Helpers ------------ */
+function getSeriesDate(s) {
+  const ch = s?.chapters?.[0];
+  const dateStr = ch?.publishedAt || ch?.createdAt || s?.updatedAt || s?.createdAt || 0;
+  return new Date(dateStr).getTime() || 0;
+}
 
-/* ------------ Utils ------------ */
 function toCard(s) {
+  const ch = s?.chapters?.[0];
   return {
     id: s.slug,
     slug: s.slug,
     title: s.title,
     cover: s.cover,
-    updatedAt: s.chapters?.[0]?.createdAt || null,
+    updatedAt: ch?.publishedAt || ch?.createdAt || s?.updatedAt || null,
     badge: s.type || 'UP',
   };
 }
@@ -114,18 +134,20 @@ app.get('/', (req, res) => {
 });
 
 /* ===================== LATEST ===================== */
-app.get(['/latest', '/manga/latest', '/recent'], (req, res) => {
-  const { series = [] } = load();
+app.get(['/latest', '/manga/latest', '/recent'], async (req, res) => {
+  const { series = [] } = await load();
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '20', 10);
+
+  const sorted = [...series].sort((a, b) => getSeriesDate(b) - getSeriesDate(a));
   const start = (page - 1) * pageSize;
-  const items = series.slice(start, start + pageSize).map(toCard);
-  res.json(items);
+
+  res.json(sorted.slice(start, start + pageSize).map(toCard));
 });
 
 /* ===================== POPULAR ===================== */
-app.get('/popular', (req, res) => {
-  const { series = [] } = load();
+app.get('/popular', async (req, res) => {
+  const { series = [] } = await load();
   const range = String(req.query.range || 'daily').toLowerCase();
   let sorted = [...series];
 
@@ -146,27 +168,31 @@ app.get('/popular', (req, res) => {
 });
 
 /* ================== RECOMMENDATIONS ================= */
-app.get('/recommendations', (req, res) => {
-  const { series = [] } = load();
-  const items = series.slice(0, 15).map((s) => ({
-    id: s.slug,
-    slug: s.slug,
-    title: s.title,
-    cover: s.cover,
-    updatedAt: null,
-  }));
+app.get('/recommendations', async (req, res) => {
+  const { series = [] } = await load();
+  const typeFilter = String(req.query.type || '').toLowerCase();
+
+  let filtered = series;
+  if (typeFilter) {
+    filtered = series.filter(
+      (s) => String(s.type || '').toLowerCase() === typeFilter
+    );
+  }
+
+  const list = filtered.length ? filtered : series;
+  const items = list.slice(0, 15).map(toCard);
   res.json(items);
 });
 
 /* ================== ANNOUNCEMENTS =================== */
-app.get('/announcements', (req, res) => {
-  const { announcements = [] } = load();
+app.get('/announcements', async (req, res) => {
+  const { announcements = [] } = await load();
   res.json(announcements);
 });
 
 /* ====================== DETAIL SERIES ====================== */
-app.get(['/manga/:slug', '/series/:slug'], (req, res) => {
-  const { series = [] } = load();
+app.get(['/manga/:slug', '/series/:slug'], async (req, res) => {
+  const { series = [] } = await load();
   const found = series.find((s) => s.slug === req.params.slug);
   if (!found) return res.status(404).json({ error: 'series not found' });
 
@@ -181,7 +207,7 @@ app.get(['/manga/:slug', '/series/:slug'], (req, res) => {
       artist: found.artist || '-',
       status: found.status || 'Ongoing',
       cover: found.cover,
-      banner: found.banner || found.cover,
+      banner: found.backdrop || found.cover,
       rating: found.rating || 0,
       views: found.views || 0,
       bookmarks: found.bookmarks || 0,
@@ -191,16 +217,16 @@ app.get(['/manga/:slug', '/series/:slug'], (req, res) => {
 });
 
 /* ===================== HALAMAN CHAPTER ===================== */
-app.get(['/manga/chapter/:id', '/chapter/:id', '/chapters/:id'], (req, res) => {
-  const { chapters = {} } = load();
+app.get(['/manga/chapter/:id', '/chapter/:id', '/chapters/:id'], async (req, res) => {
+  const { chapters = {} } = await load();
   const pages = chapters[req.params.id];
   if (!pages) return res.status(404).json({ error: 'chapter not found' });
   res.json(pages);
 });
 
 /* ========================= SEARCH ========================= */
-app.get('/search', (req, res) => {
-  const { series = [] } = load();
+app.get('/search', async (req, res) => {
+  const { series = [] } = await load();
   const qRaw = String(req.query.q || '').trim();
   if (!qRaw) return res.json([]);
 
@@ -228,15 +254,15 @@ app.get('/search', (req, res) => {
 });
 
 /* ========================= GENRES ========================= */
-app.get('/genres', (req, res) => {
-  const { series = [] } = load();
+app.get('/genres', async (req, res) => {
+  const { series = [] } = await load();
   const set = new Set();
   series.forEach((s) => (s.genres || []).forEach((g) => set.add(String(g))));
   res.json(Array.from(set).sort((a, b) => a.localeCompare(b)));
 });
 
-app.get('/by-genre/:name', (req, res) => {
-  const { series = [] } = load();
+app.get('/by-genre/:name', async (req, res) => {
+  const { series = [] } = await load();
   const name = (req.params.name || '').toLowerCase();
   const page = parseInt(req.query.page || '1', 10);
   const pageSize = parseInt(req.query.pageSize || '20', 10);
@@ -254,7 +280,4 @@ app.get('/by-genre/:name', (req, res) => {
   });
 });
 
-/* ------------ Export handler untuk Vercel ------------ */
-// ⚠️ Jangan app.listen() di Vercel.
-// Cukup export default app.
 export default app;
