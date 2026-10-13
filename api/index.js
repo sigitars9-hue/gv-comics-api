@@ -308,14 +308,34 @@ async function githubSaveBucket(bucket, data, sha, message) {
   return body;
 }
 
+
+const bucketQueues = new Map();
+
 async function mutateBucket(bucket, message, callback) {
-  const { data, sha } = await githubGetBucket(bucket);
-  const result = await callback(data);
+  const previous = bucketQueues.get(bucket) || Promise.resolve();
 
-  await githubSaveBucket(bucket, data, sha, message);
+  const current = previous.then(async () => {
+    const { data, sha } = await githubGetBucket(bucket);
+    const result = await callback(data);
 
-  return result;
+    await githubSaveBucket(bucket, data, sha, message);
+
+    return result;
+  });
+
+  // Simpan antrean yang tetap berjalan walaupun operasi gagal,
+  // agar satu error tidak memblokir operasi berikutnya.
+  bucketQueues.set(
+    bucket,
+    current.then(
+      () => undefined,
+      () => undefined
+    )
+  );
+
+  return current;
 }
+
 
 /* ================= ROOT ================= */
 
@@ -791,15 +811,27 @@ app.post("/admin/series/:slug/chapters", requireAdmin, async (req, res) => {
         }
 
         
-if (!Array.isArray(series.chapters)) series.chapters = [];
 
-// Cari semua chapter yang memiliki nomor sama.
+if (!Array.isArray(series.chapters)) {
+  series.chapters = [];
+}
+
+if (
+  !data.chapters ||
+  typeof data.chapters !== "object" ||
+  Array.isArray(data.chapters)
+) {
+  data.chapters = {};
+}
+
+// Cari chapter lama berdasarkan nomor.
 const existingMatches = series.chapters.filter(
-  (chapter) => Number(chapter.number) === number
+  (item) => Number(item.number) === number
 );
 
-// Pertahankan ID dan data lama dari chapter pertama yang ditemukan.
 const previous = existingMatches[0] || {};
+
+// Utamakan ID chapter lama agar ID tidak berubah saat update.
 const id = previous.id || input.id || `${slug}-${number}`;
 
 const chapter = {
@@ -808,28 +840,44 @@ const chapter = {
   id,
   number,
   title: String(input.title || `Chapter ${number}`),
-  publishedAt: input.publishedAt || new Date().toISOString(),
-  thumbnail: input.thumbnail || input.pages?.[0] || previous.thumbnail,
+  publishedAt:
+    input.publishedAt ||
+    previous.publishedAt ||
+    new Date().toISOString(),
+  thumbnail:
+    input.thumbnail ||
+    input.pages?.[0] ||
+    previous.thumbnail ||
+    "",
+  bucket,
 };
 
-// Hapus semua entri dengan nomor tersebut sebelum memasukkan satu versi.
-for (const duplicate of existingMatches) {
-  if (duplicate.id && duplicate.id !== id) {
-    delete data.chapters[duplicate.id];
-  }
-}
-
+// Hapus entri lama berdasarkan nomor yang sama.
 series.chapters = series.chapters.filter(
   (item) => Number(item.number) !== number
 );
 
+// Masukkan satu versi chapter yang terbaru.
 series.chapters.push(chapter);
 
 series.chapters.sort(
   (a, b) => Number(a.number || 0) - Number(b.number || 0)
 );
 
+// Sinkronkan indeks chapter.
+// Bersihkan ID lama yang sudah tidak dipakai oleh chapter di series ini.
+for (const oldChapter of existingMatches) {
+  if (oldChapter.id && oldChapter.id !== id) {
+    delete data.chapters[oldChapter.id];
+  }
+}
+
 data.chapters[id] = chapter;
+
+series.updatedAt = new Date().toISOString();
+
+return chapter;
+
 
         series.updatedAt = new Date().toISOString();
 
