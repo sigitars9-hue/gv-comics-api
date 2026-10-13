@@ -12,6 +12,21 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "2mb" }));
 
+
+/* ================= API PREFIX FIX ================= */
+// Mendukung URL dengan maupun tanpa prefix /api.
+// Contoh: /api/series/latest -> /series/latest
+
+app.use((req, res, next) => {
+  if (req.url === "/api") {
+    req.url = "/";
+  } else if (req.url.startsWith("/api/")) {
+    req.url = req.url.slice(4);
+  }
+
+  next();
+});
+
 const GH_REPO = process.env.GH_REPO || "sigitars9-hue/api-gv";
 const GH_BRANCH = process.env.GH_BRANCH || "main";
 const GH_TOKEN = process.env.GITHUB_TOKEN || "";
