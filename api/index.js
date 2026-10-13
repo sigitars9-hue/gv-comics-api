@@ -1,282 +1,832 @@
+
 // api/index.js
-import express from 'express';
-import cors from 'cors';
+import express from "express";
+import cors from "cors";
 
 const app = express();
 
-/* ------------ CORS global ------------ */
-function corsHeaders(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  next();
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+app.use(express.json({ limit: "2mb" }));
+
+const GH_REPO = process.env.GH_REPO || "sigitars9-hue/api-gv";
+const GH_BRANCH = process.env.GH_BRANCH || "main";
+const GH_TOKEN = process.env.GITHUB_TOKEN || "";
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+
+const BUCKETS = ["data1", "data2", "data3"];
+const CACHE_TTL = 10_000;
+
+let cache = { data: null, ts: 0 };
+
+function emptyData() {
+  return { series: [], chapters: {}, announcements: [] };
 }
 
-app.use(cors());
-app.use(corsHeaders);
-app.use(express.json());
+function validBucket(value) {
+  return BUCKETS.includes(value) ? value : null;
+}
 
-/* ------------ GitHub Config ------------ */
-const GH_REPO   = process.env.GH_REPO || 'sigitars9-hue/api-gv';
-const GH_BRANCH = process.env.GH_BRANCH || 'main';
-const GH_TOKEN  = process.env.GITHUB_TOKEN || '';
+function normalizeData(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    data = emptyData();
+  }
 
-const DATA_FILES = ['data1.json', 'data2.json', 'data3.json'];
+  if (!Array.isArray(data.series)) data.series = [];
+  if (!data.chapters || typeof data.chapters !== "object" || Array.isArray(data.chapters)) {
+    data.chapters = {};
+  }
+  if (!Array.isArray(data.announcements)) data.announcements = [];
 
-let __cache = { data: null, ts: 0 };
+  return data;
+}
 
-async function fetchJsonFromGithub(filename) {
-  const url = `https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/data/${filename}`;
-  const headers = {};
-  if (GH_TOKEN) headers['Authorization'] = `token ${GH_TOKEN}`;
+function makeSlug(value = "") {
+  return String(value)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
 
-  try {
-    const resp = await fetch(url, { headers });
-    if (!resp.ok) {
-      console.error(`Gagal memuat ${filename}: status ${resp.status}`);
-      return null;
-    }
-    return await resp.json();
-  } catch (err) {
-    console.error(`Error fetch ${filename}:`, err);
+function getSeriesDate(series) {
+  const chapter = series?.chapters?.[0];
+  const date =
+    chapter?.publishedAt ||
+    chapter?.createdAt ||
+    series?.updatedAt ||
+    series?.createdAt ||
+    0;
+
+  return new Date(date).getTime() || 0;
+}
+
+function toCard(series) {
+  const chapter = series?.chapters?.[0];
+
+  return {
+    id: series.slug,
+    slug: series.slug,
+    title: series.title,
+    cover: series.cover,
+    updatedAt:
+      chapter?.publishedAt ||
+      chapter?.createdAt ||
+      series?.updatedAt ||
+      null,
+    badge: series.type || "UP",
+  };
+}
+
+/* ================= PUBLIC DATA READER ================= */
+
+async function fetchPublicBucket(bucket) {
+  const url =
+    `https://raw.githubusercontent.com/${GH_REPO}/` +
+    `${GH_BRANCH}/data/${bucket}.json`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    console.error(`Gagal membaca ${bucket}.json: HTTP ${response.status}`);
     return null;
   }
+
+  return normalizeData(await response.json());
+}
+
+async function loadBucket(bucket) {
+  const data = await fetchPublicBucket(bucket);
+
+  if (!data) {
+    throw new Error(`Tidak dapat membaca data/${bucket}.json dari GitHub.`);
+  }
+
+  return data;
 }
 
 async function load() {
   const now = Date.now();
-  // Cache data 10 detik agar hemat kuota request GitHub
-  if (__cache.data && now - __cache.ts < 10_000) {
-    return __cache.data;
+
+  if (cache.data && now - cache.ts < CACHE_TTL) {
+    return cache.data;
   }
 
-  try {
-    const results = await Promise.all(
-      DATA_FILES.map((file) => fetchJsonFromGithub(file))
-    );
-
-    const merged = {
-      series: [],
-      chapters: {},
-      announcements: [],
-    };
-
-    const seenSlugs = new Set();
-
-    for (const json of results) {
-      if (!json) continue;
-
-      if (Array.isArray(json.series)) {
-        for (const item of json.series) {
-          if (item?.slug && !seenSlugs.has(item.slug)) {
-            seenSlugs.add(item.slug);
-            merged.series.push(item);
-          }
-        }
+  const results = await Promise.all(
+    BUCKETS.map(async (bucket) => {
+      try {
+        return await fetchPublicBucket(bucket);
+      } catch (error) {
+        console.error(`Gagal memuat ${bucket}:`, error.message);
+        return null;
       }
+    })
+  );
 
-      if (json.chapters && typeof json.chapters === 'object') {
-        Object.assign(merged.chapters, json.chapters);
-      }
+  const merged = emptyData();
+  const seenSlugs = new Set();
 
-      if (Array.isArray(json.announcements)) {
-        merged.announcements.push(...json.announcements);
+  for (const data of results) {
+    if (!data) continue;
+
+    for (const item of data.series) {
+      if (item?.slug && !seenSlugs.has(item.slug)) {
+        seenSlugs.add(item.slug);
+        merged.series.push(item);
       }
     }
 
-    __cache = { data: merged, ts: now };
-    return merged;
-  } catch (err) {
-    console.error('Error saat merge data:', err);
-    return __cache.data || { series: [], chapters: {}, announcements: [] };
+    Object.assign(merged.chapters, data.chapters);
+    merged.announcements.push(...data.announcements);
   }
+
+  cache = { data: merged, ts: now };
+  return merged;
 }
 
-/* ------------ Helpers ------------ */
-function getSeriesDate(s) {
-  const ch = s?.chapters?.[0];
-  const dateStr = ch?.publishedAt || ch?.createdAt || s?.updatedAt || s?.createdAt || 0;
-  return new Date(dateStr).getTime() || 0;
-}
+/* ================= GITHUB WRITE HELPERS ================= */
 
-function toCard(s) {
-  const ch = s?.chapters?.[0];
+function githubHeaders(extra = {}) {
   return {
-    id: s.slug,
-    slug: s.slug,
-    title: s.title,
-    cover: s.cover,
-    updatedAt: ch?.publishedAt || ch?.createdAt || s?.updatedAt || null,
-    badge: s.type || 'UP',
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${GH_TOKEN}`,
+    ...extra,
   };
 }
 
-/* ------------ Routes ------------ */
+function requireAdmin(req, res, next) {
+  if (!ADMIN_TOKEN) {
+    return res.status(503).json({
+      error: "ADMIN_TOKEN belum diatur pada environment backend.",
+    });
+  }
 
-// Root
-app.get('/', (req, res) => {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+
+  if (token !== ADMIN_TOKEN) {
+    return res.status(401).json({
+      error: "Token admin tidak valid.",
+    });
+  }
+
+  if (!GH_TOKEN) {
+    return res.status(503).json({
+      error: "GITHUB_TOKEN belum diatur pada environment backend.",
+    });
+  }
+
+  next();
+}
+
+function getRequestBucket(req) {
+  return validBucket(
+    String(req.body?.bucket || req.query?.bucket || "data1")
+  );
+}
+
+async function githubGetBucket(bucket) {
+  const path = `data/${bucket}.json`;
+  const url =
+    `https://api.github.com/repos/${GH_REPO}/contents/${path}` +
+    `?ref=${encodeURIComponent(GH_BRANCH)}`;
+
+  const response = await fetch(url, {
+    headers: githubHeaders(),
+  });
+
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      body.message ||
+      `Gagal membaca ${path} dari GitHub (HTTP ${response.status}).`
+    );
+  }
+
+  const content = Buffer.from(
+    body.content || "",
+    "base64"
+  ).toString("utf8");
+
+  let data;
+
+  try {
+    data = JSON.parse(content);
+  } catch {
+    throw new Error(`${path} bukan JSON yang valid.`);
+  }
+
+  return {
+    sha: body.sha,
+    data: normalizeData(data),
+  };
+}
+
+async function githubSaveBucket(bucket, data, sha, message) {
+  const path = `data/${bucket}.json`;
+  const url =
+    `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+
+  const payload = {
+    message,
+    branch: GH_BRANCH,
+    content: Buffer.from(
+      JSON.stringify(data, null, 2) + "\n",
+      "utf8"
+    ).toString("base64"),
+    sha,
+  };
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: githubHeaders({
+      "Content-Type": "application/json",
+    }),
+    body: JSON.stringify(payload),
+  });
+
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      body.message ||
+      `Gagal menyimpan ${path} ke GitHub (HTTP ${response.status}).`
+    );
+  }
+
+  cache = { data: null, ts: 0 };
+
+  return body;
+}
+
+async function mutateBucket(bucket, message, callback) {
+  const { data, sha } = await githubGetBucket(bucket);
+  const result = await callback(data);
+
+  await githubSaveBucket(bucket, data, sha, message);
+
+  return result;
+}
+
+/* ================= ROOT ================= */
+
+app.get("/", (_req, res) => {
   res.json({
     ok: true,
-    name: 'gv-comics-api',
-    docs: [
-      '/latest?page=1',
-      '/recommendations?type=manhwa',
-      '/announcements',
-      '/manga/:slug',
-      '/manga/chapter/:id',
-      '/search?q=keyword',
-      '/genres',
-      '/by-genre/:name?page=1&pageSize=20',
-      '/popular?range=daily|weekly|all',
+    name: "gv-comics-api",
+    endpoints: [
+      "/latest",
+      "/series/latest",
+      "/series/:slug/chapters",
+      "/chapter/:id",
+      "/search",
+      "/genres",
+      "/by-genre/:name",
     ],
   });
 });
 
-/* ===================== LATEST ===================== */
-app.get(['/latest', '/manga/latest', '/recent'], async (req, res) => {
-  const { series = [] } = await load();
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '20', 10);
+/* ================= LATEST ================= */
 
-  const sorted = [...series].sort((a, b) => getSeriesDate(b) - getSeriesDate(a));
-  const start = (page - 1) * pageSize;
+app.get(["/latest", "/manga/latest", "/recent"], async (req, res) => {
+  try {
+    const { series } = await load();
 
-  res.json(sorted.slice(start, start + pageSize).map(toCard));
-});
-
-/* ===================== POPULAR ===================== */
-app.get('/popular', async (req, res) => {
-  const { series = [] } = await load();
-  const range = String(req.query.range || 'daily').toLowerCase();
-  let sorted = [...series];
-
-  if (range === 'daily') {
-    sorted.sort((a, b) => (b.bookmarks || 0) - (a.bookmarks || 0));
-  } else if (range === 'weekly') {
-    sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
-  } else {
-    sorted.sort(
-      (a, b) =>
-        (b.rating || 0) - (a.rating || 0) ||
-        (b.views || 0) - (a.views || 0) ||
-        (b.bookmarks || 0) - (a.bookmarks || 0)
+    const page = Math.max(
+      1,
+      Number.parseInt(req.query.page || "1", 10) || 1
     );
-  }
 
-  res.json(sorted.slice(0, 10).map(toCard));
-});
-
-/* ================== RECOMMENDATIONS ================= */
-app.get('/recommendations', async (req, res) => {
-  const { series = [] } = await load();
-  const typeFilter = String(req.query.type || '').toLowerCase();
-
-  let filtered = series;
-  if (typeFilter) {
-    filtered = series.filter(
-      (s) => String(s.type || '').toLowerCase() === typeFilter
+    const pageSize = Math.min(
+      200,
+      Math.max(1, Number.parseInt(req.query.pageSize || "20", 10) || 20)
     );
+
+    const sorted = [...series].sort(
+      (a, b) => getSeriesDate(b) - getSeriesDate(a)
+    );
+
+    const start = (page - 1) * pageSize;
+
+    res.json(sorted.slice(start, start + pageSize).map(toCard));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-  const list = filtered.length ? filtered : series;
-  const items = list.slice(0, 15).map(toCard);
-  res.json(items);
 });
 
-/* ================== ANNOUNCEMENTS =================== */
-app.get('/announcements', async (req, res) => {
-  const { announcements = [] } = await load();
-  res.json(announcements);
+/* ================= ADMIN SERIES LIST ================= */
+
+app.get("/series/latest", async (req, res) => {
+  try {
+    const { series } = await load();
+
+    const page = Math.max(
+      1,
+      Number.parseInt(req.query.page || "1", 10) || 1
+    );
+
+    const pageSize = Math.min(
+      2000,
+      Math.max(
+        1,
+        Number.parseInt(req.query.pageSize || "2000", 10) || 2000
+      )
+    );
+
+    const sorted = [...series].sort(
+      (a, b) => getSeriesDate(b) - getSeriesDate(a)
+    );
+
+    const start = (page - 1) * pageSize;
+
+    res.json({
+      items: sorted.slice(start, start + pageSize),
+      total: sorted.length,
+      page,
+      pageSize,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-/* ====================== DETAIL SERIES ====================== */
-app.get(['/manga/:slug', '/series/:slug'], async (req, res) => {
-  const { series = [] } = await load();
-  const found = series.find((s) => s.slug === req.params.slug);
-  if (!found) return res.status(404).json({ error: 'series not found' });
+/* ================= POPULAR ================= */
 
-  res.json({
-    info: {
-      slug: found.slug,
-      title: found.title,
-      description: found.description || '',
-      type: found.type || 'Manhwa',
-      genres: found.genres || [],
-      author: found.author || '-',
-      artist: found.artist || '-',
-      status: found.status || 'Ongoing',
-      cover: found.cover,
-      banner: found.backdrop || found.cover,
-      rating: found.rating || 0,
-      views: found.views || 0,
-      bookmarks: found.bookmarks || 0,
-    },
-    chapters: found.chapters || [],
-  });
+app.get("/popular", async (req, res) => {
+  try {
+    const { series } = await load();
+    const range = String(req.query.range || "daily").toLowerCase();
+
+    const sorted = [...series];
+
+    if (range === "daily") {
+      sorted.sort((a, b) => (b.bookmarks || 0) - (a.bookmarks || 0));
+    } else if (range === "weekly") {
+      sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
+    } else {
+      sorted.sort(
+        (a, b) =>
+          (b.rating || 0) - (a.rating || 0) ||
+          (b.views || 0) - (a.views || 0) ||
+          (b.bookmarks || 0) - (a.bookmarks || 0)
+      );
+    }
+
+    res.json(sorted.slice(0, 10).map(toCard));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-/* ===================== HALAMAN CHAPTER ===================== */
-app.get(['/manga/chapter/:id', '/chapter/:id', '/chapters/:id'], async (req, res) => {
-  const { chapters = {} } = await load();
-  const pages = chapters[req.params.id];
-  if (!pages) return res.status(404).json({ error: 'chapter not found' });
-  res.json(pages);
+/* ================= RECOMMENDATIONS ================= */
+
+app.get("/recommendations", async (req, res) => {
+  try {
+    const { series } = await load();
+    const type = String(req.query.type || "").toLowerCase();
+
+    const filtered = type
+      ? series.filter((s) => String(s.type || "").toLowerCase() === type)
+      : series;
+
+    res.json((filtered.length ? filtered : series).slice(0, 15).map(toCard));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-/* ========================= SEARCH ========================= */
-app.get('/search', async (req, res) => {
-  const { series = [] } = await load();
-  const qRaw = String(req.query.q || '').trim();
-  if (!qRaw) return res.json([]);
+/* ================= ANNOUNCEMENTS ================= */
 
-  const norm = (s) =>
-    s
-      .toLowerCase()
-      .normalize('NFKD')
-      .replace(/[^\w\s-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-  const terms = norm(qRaw).split(' ').filter(Boolean);
-
-  const hits = series.filter((s) => {
-    const hay =
-      norm(s.title || '') +
-      ' ' +
-      norm(s.slug || '') +
-      ' ' +
-      norm((s.genres || []).join(' '));
-    return terms.every((t) => hay.includes(t));
-  });
-
-  res.json(hits.map(toCard));
+app.get("/announcements", async (_req, res) => {
+  try {
+    const { announcements } = await load();
+    res.json(announcements);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-/* ========================= GENRES ========================= */
-app.get('/genres', async (req, res) => {
-  const { series = [] } = await load();
-  const set = new Set();
-  series.forEach((s) => (s.genres || []).forEach((g) => set.add(String(g))));
-  res.json(Array.from(set).sort((a, b) => a.localeCompare(b)));
+/* ================= SERIES DETAIL ================= */
+
+app.get(["/manga/:slug", "/series/:slug"], async (req, res, next) => {
+  if (req.params.slug === "latest") return next();
+
+  try {
+    const { series } = await load();
+    const found = series.find((s) => s.slug === req.params.slug);
+
+    if (!found) {
+      return res.status(404).json({ error: "series not found" });
+    }
+
+    res.json({
+      info: {
+        slug: found.slug,
+        title: found.title,
+        description: found.description || "",
+        type: found.type || "Manhwa",
+        genres: found.genres || [],
+        author: found.author || "-",
+        artist: found.artist || "-",
+        status: found.status || "Ongoing",
+        cover: found.cover,
+        banner: found.backdrop || found.cover,
+        rating: found.rating || 0,
+        views: found.views || 0,
+        bookmarks: found.bookmarks || 0,
+      },
+      chapters: found.chapters || [],
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.get('/by-genre/:name', async (req, res) => {
-  const { series = [] } = await load();
-  const name = (req.params.name || '').toLowerCase();
-  const page = parseInt(req.query.page || '1', 10);
-  const pageSize = parseInt(req.query.pageSize || '20', 10);
+/* ================= CHAPTER DETAIL ================= */
 
-  const filtered = series.filter((s) =>
-    (s.genres || []).some((g) => String(g).toLowerCase() === name)
-  );
+app.get(
+  ["/manga/chapter/:id", "/chapter/:id", "/chapters/:id"],
+  async (req, res) => {
+    try {
+      const { chapters } = await load();
+      const found = chapters[req.params.id];
 
-  const start = (page - 1) * pageSize;
-  res.json({
-    total: filtered.length,
-    page,
-    pageSize,
-    items: filtered.slice(start, start + pageSize).map(toCard),
+      if (!found) {
+        return res.status(404).json({ error: "chapter not found" });
+      }
+
+      res.json(
+        Array.isArray(found)
+          ? { id: req.params.id, pages: found }
+          : found
+      );
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+/* ================= SEARCH ================= */
+
+app.get("/search", async (req, res) => {
+  try {
+    const { series } = await load();
+    const query = String(req.query.q || "").trim();
+
+    if (!query) return res.json([]);
+
+    const normalize = (value) =>
+      String(value)
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[^\w\s-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const terms = normalize(query).split(" ").filter(Boolean);
+
+    const result = series.filter((s) => {
+      const haystack =
+        normalize(s.title || "") +
+        " " +
+        normalize(s.slug || "") +
+        " " +
+        normalize((s.genres || []).join(" "));
+
+      return terms.every((term) => haystack.includes(term));
+    });
+
+    res.json(result.map(toCard));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ================= GENRES ================= */
+
+app.get("/genres", async (_req, res) => {
+  try {
+    const { series } = await load();
+    const genres = new Set();
+
+    series.forEach((s) =>
+      (s.genres || []).forEach((g) => genres.add(String(g)))
+    );
+
+    res.json([...genres].sort((a, b) => a.localeCompare(b)));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ================= FILTER BY GENRE ================= */
+
+app.get("/by-genre/:name", async (req, res) => {
+  try {
+    const { series } = await load();
+    const name = decodeURIComponent(req.params.name || "").toLowerCase();
+
+    const page = Math.max(
+      1,
+      Number.parseInt(req.query.page || "1", 10) || 1
+    );
+
+    const pageSize = Math.min(
+      200,
+      Math.max(1, Number.parseInt(req.query.pageSize || "20", 10) || 20)
+    );
+
+    const filtered = series.filter((s) =>
+      (s.genres || []).some((g) => String(g).toLowerCase() === name)
+    );
+
+    const start = (page - 1) * pageSize;
+
+    res.json({
+      total: filtered.length,
+      page,
+      pageSize,
+      items: filtered.slice(start, start + pageSize).map(toCard),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ================= CHAPTER LIST ================= */
+
+app.get("/series/:slug/chapters", async (req, res) => {
+  try {
+    const { series } = await load();
+    const found = series.find((s) => s.slug === req.params.slug);
+
+    if (!found) {
+      return res.status(404).json({ error: "Series tidak ditemukan." });
+    }
+
+    const chapters = Array.isArray(found.chapters)
+      ? [...found.chapters]
+      : [];
+
+    chapters.sort(
+      (a, b) => Number(a.number || 0) - Number(b.number || 0)
+    );
+
+    res.json({ items: chapters });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ================= SAVE / UPDATE SERIES ================= */
+
+app.post("/admin/series", requireAdmin, async (req, res) => {
+  try {
+    const bucket = getRequestBucket(req);
+
+    if (!bucket) {
+      return res.status(400).json({
+        error: "Bucket harus data1, data2, atau data3.",
+      });
+    }
+
+    const input = req.body || {};
+    const slug = makeSlug(input.slug || input.title || "");
+
+    if (!String(input.title || "").trim() || !slug) {
+      return res.status(400).json({
+        error: "Judul dan slug wajib diisi.",
+      });
+    }
+
+    const saved = await mutateBucket(
+      bucket,
+      `Save series ${slug}`,
+      (data) => {
+        const index = data.series.findIndex((s) => s.slug === slug);
+        const previous = index >= 0 ? data.series[index] : {};
+
+        const item = {
+          ...previous,
+          ...input,
+          title: String(input.title).trim(),
+          slug,
+          description: String(input.description || ""),
+          genres: Array.isArray(input.genres) ? input.genres : [],
+          tags: Array.isArray(input.tags) ? input.tags : [],
+          chapters: previous.chapters || [],
+          createdAt: previous.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (index >= 0) data.series[index] = item;
+        else data.series.push(item);
+
+        return item;
+      }
+    );
+
+    res.json({ ok: true, series: saved, bucket });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ================= SAVE / UPDATE CHAPTER ================= */
+
+app.post("/admin/series/:slug/chapters", requireAdmin, async (req, res) => {
+  try {
+    const bucket = getRequestBucket(req);
+
+    if (!bucket) {
+      return res.status(400).json({
+        error: "Bucket harus data1, data2, atau data3.",
+      });
+    }
+
+    const slug = req.params.slug;
+    const input = req.body || {};
+    const number = Number(input.number);
+
+    if (!Number.isFinite(number) || number < 0) {
+      return res.status(400).json({
+        error: "Nomor chapter tidak valid.",
+      });
+    }
+
+    if (input.type === "comic" && !input.pages?.length) {
+      return res.status(400).json({
+        error: "Chapter komik harus memiliki minimal satu halaman.",
+      });
+    }
+
+    if (input.type === "novel" && !String(input.content || "").trim()) {
+      return res.status(400).json({
+        error: "Isi novel tidak boleh kosong.",
+      });
+    }
+
+    const saved = await mutateBucket(
+      bucket,
+      `Save chapter ${slug} ${number}`,
+      (data) => {
+        const series = data.series.find((s) => s.slug === slug);
+
+        if (!series) {
+          throw new Error(`Series '${slug}' tidak ditemukan di ${bucket}.`);
+        }
+
+        if (!Array.isArray(series.chapters)) series.chapters = [];
+
+        const existingIndex = series.chapters.findIndex(
+          (chapter) => Number(chapter.number) === number
+        );
+
+        const previous =
+          existingIndex >= 0 ? series.chapters[existingIndex] : {};
+
+        const id = previous.id || input.id || `${slug}-${number}`;
+
+        const chapter = {
+          ...previous,
+          ...input,
+          id,
+          number,
+          title: String(input.title || `Chapter ${number}`),
+          publishedAt: input.publishedAt || new Date().toISOString(),
+          thumbnail: input.thumbnail || input.pages?.[0] || previous.thumbnail,
+        };
+
+        if (existingIndex >= 0) {
+          series.chapters[existingIndex] = chapter;
+        } else {
+          series.chapters.push(chapter);
+        }
+
+        series.chapters.sort(
+          (a, b) => Number(a.number || 0) - Number(b.number || 0)
+        );
+
+        data.chapters[id] = chapter;
+        series.updatedAt = new Date().toISOString();
+
+        return chapter;
+      }
+    );
+
+    res.json({ ok: true, chapter: saved, bucket });
+  } catch (error) {
+    const status = error.message?.includes("tidak ditemukan") ? 404 : 500;
+    res.status(status).json({ error: error.message });
+  }
+});
+
+/* ================= DELETE SERIES ================= */
+
+app.delete("/admin/series/:slug", requireAdmin, async (req, res) => {
+  try {
+    const bucket = getRequestBucket(req);
+
+    if (!bucket) {
+      return res.status(400).json({
+        error: "Bucket harus data1, data2, atau data3.",
+      });
+    }
+
+    const slug = req.params.slug;
+
+    const deleted = await mutateBucket(
+      bucket,
+      `Delete series ${slug}`,
+      (data) => {
+        const index = data.series.findIndex((s) => s.slug === slug);
+
+        if (index < 0) {
+          throw new Error(`Series '${slug}' tidak ditemukan di ${bucket}.`);
+        }
+
+        const [removed] = data.series.splice(index, 1);
+
+        for (const chapter of removed.chapters || []) {
+          if (chapter?.id) delete data.chapters[chapter.id];
+        }
+
+        return { slug: removed.slug };
+      }
+    );
+
+    res.json({ ok: true, deleted, bucket });
+  } catch (error) {
+    const status = error.message?.includes("tidak ditemukan") ? 404 : 500;
+    res.status(status).json({ error: error.message });
+  }
+});
+
+/* ================= DELETE CHAPTER ================= */
+
+app.delete(
+  "/admin/series/:slug/chapters/:id",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const bucket = getRequestBucket(req);
+
+      if (!bucket) {
+        return res.status(400).json({
+          error: "Bucket harus data1, data2, atau data3.",
+        });
+      }
+
+      const { slug, id } = req.params;
+
+      const deleted = await mutateBucket(
+        bucket,
+        `Delete chapter ${id}`,
+        (data) => {
+          const series = data.series.find((s) => s.slug === slug);
+
+          if (!series) {
+            throw new Error(`Series '${slug}' tidak ditemukan di ${bucket}.`);
+          }
+
+          const index = (series.chapters || []).findIndex(
+            (chapter) =>
+              chapter.id === id || String(chapter.number) === id
+          );
+
+          if (index < 0) {
+            throw new Error(`Chapter '${id}' tidak ditemukan.`);
+          }
+
+          const [removed] = series.chapters.splice(index, 1);
+
+          if (removed.id) delete data.chapters[removed.id];
+
+          series.updatedAt = new Date().toISOString();
+
+          return { id: removed.id || id };
+        }
+      );
+
+      res.json({ ok: true, deleted, bucket });
+    } catch (error) {
+      const status = error.message?.includes("tidak ditemukan") ? 404 : 500;
+      res.status(status).json({ error: error.message });
+    }
+  }
+);
+
+/* ================= UNKNOWN ENDPOINT ================= */
+
+app.use((req, res) => {
+  res.status(404).json({
+    error: `Endpoint tidak ditemukan: ${req.method} ${req.path}`,
   });
 });
 
