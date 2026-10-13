@@ -790,38 +790,47 @@ app.post("/admin/series/:slug/chapters", requireAdmin, async (req, res) => {
           throw new Error(`Series '${slug}' tidak ditemukan di ${bucket}.`);
         }
 
-        if (!Array.isArray(series.chapters)) series.chapters = [];
+        
+if (!Array.isArray(series.chapters)) series.chapters = [];
 
-        const existingIndex = series.chapters.findIndex(
-          (chapter) => Number(chapter.number) === number
-        );
+// Cari semua chapter yang memiliki nomor sama.
+const existingMatches = series.chapters.filter(
+  (chapter) => Number(chapter.number) === number
+);
 
-        const previous =
-          existingIndex >= 0 ? series.chapters[existingIndex] : {};
+// Pertahankan ID dan data lama dari chapter pertama yang ditemukan.
+const previous = existingMatches[0] || {};
+const id = previous.id || input.id || `${slug}-${number}`;
 
-        const id = previous.id || input.id || `${slug}-${number}`;
+const chapter = {
+  ...previous,
+  ...input,
+  id,
+  number,
+  title: String(input.title || `Chapter ${number}`),
+  publishedAt: input.publishedAt || new Date().toISOString(),
+  thumbnail: input.thumbnail || input.pages?.[0] || previous.thumbnail,
+};
 
-        const chapter = {
-          ...previous,
-          ...input,
-          id,
-          number,
-          title: String(input.title || `Chapter ${number}`),
-          publishedAt: input.publishedAt || new Date().toISOString(),
-          thumbnail: input.thumbnail || input.pages?.[0] || previous.thumbnail,
-        };
+// Hapus semua entri dengan nomor tersebut sebelum memasukkan satu versi.
+for (const duplicate of existingMatches) {
+  if (duplicate.id && duplicate.id !== id) {
+    delete data.chapters[duplicate.id];
+  }
+}
 
-        if (existingIndex >= 0) {
-          series.chapters[existingIndex] = chapter;
-        } else {
-          series.chapters.push(chapter);
-        }
+series.chapters = series.chapters.filter(
+  (item) => Number(item.number) !== number
+);
 
-        series.chapters.sort(
-          (a, b) => Number(a.number || 0) - Number(b.number || 0)
-        );
+series.chapters.push(chapter);
 
-        data.chapters[id] = chapter;
+series.chapters.sort(
+  (a, b) => Number(a.number || 0) - Number(b.number || 0)
+);
+
+data.chapters[id] = chapter;
+
         series.updatedAt = new Date().toISOString();
 
         return chapter;
