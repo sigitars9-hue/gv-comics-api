@@ -142,7 +142,13 @@ async function load() {
       }
     })
   );
+const successfulBuckets = results.filter(Boolean).length;
 
+if (successfulBuckets === 0) {
+  throw new Error(
+    "Semua file data gagal dibaca dari GitHub. Periksa URL repository, branch, dan file JSON."
+  );
+}
   const merged = emptyData();
   const seenSlugs = new Set();
 
@@ -337,9 +343,27 @@ app.get(["/latest", "/manga/latest", "/recent"], async (req, res) => {
 
 /* ================= ADMIN SERIES LIST ================= */
 
+
+/* ================= ADMIN SERIES LIST ================= */
+
 app.get("/series/latest", async (req, res) => {
   try {
-    const { series } = await load();
+    let series;
+
+    if (req.query.bucket) {
+      const bucket = validBucket(String(req.query.bucket));
+
+      if (!bucket) {
+        return res.status(400).json({
+          error: "Bucket harus data1, data2, atau data3.",
+        });
+      }
+
+      const data = await loadBucket(bucket);
+      series = data.series;
+    } else {
+      ({ series } = await load());
+    }
 
     const page = Math.max(
       1,
@@ -370,6 +394,7 @@ app.get("/series/latest", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 /* ================= POPULAR ================= */
 
@@ -611,46 +636,92 @@ app.post("/admin/series", requireAdmin, async (req, res) => {
       });
     }
 
-    const input = req.body || {};
-    const slug = makeSlug(input.slug || input.title || "");
+    
+const input = req.body || {};
+const originalSlug = makeSlug(input.originalSlug || input.slug || "");
+const slug = makeSlug(input.slug || input.title || "");
 
-    if (!String(input.title || "").trim() || !slug) {
-      return res.status(400).json({
-        error: "Judul dan slug wajib diisi.",
-      });
-    }
+if (!String(input.title || "").trim() || !slug) {
+  return res.status(400).json({
+    error: "Judul dan slug wajib diisi.",
+  });
+}
 
-    const saved = await mutateBucket(
-      bucket,
-      `Save series ${slug}`,
-      (data) => {
-        const index = data.series.findIndex((s) => s.slug === slug);
-        const previous = index >= 0 ? data.series[index] : {};
-
-        const item = {
-          ...previous,
-          ...input,
-          title: String(input.title).trim(),
-          slug,
-          description: String(input.description || ""),
-          genres: Array.isArray(input.genres) ? input.genres : [],
-          tags: Array.isArray(input.tags) ? input.tags : [],
-          chapters: previous.chapters || [],
-          createdAt: previous.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        if (index >= 0) data.series[index] = item;
-        else data.series.push(item);
-
-        return item;
-      }
+const saved = await mutateBucket(
+  bucket,
+  `Save series ${slug}`,
+  (data) => {
+    const index = data.series.findIndex(
+      (s) => s.slug === originalSlug
     );
 
-    res.json({ ok: true, series: saved, bucket });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const previous = index >= 0 ? data.series[index] : null;
+
+    // Jika sedang edit, series lama wajib ditemukan.
+    if (input.originalSlug && !previous) {
+      throw new Error(
+        `Series '${originalSlug}' tidak ditemukan di ${bucket}.`
+      );
+    }
+
+    // Cegah slug bertabrakan dengan series lain.
+    const duplicate = data.series.some(
+      (s, i) => s.slug === slug && i !== index
+    );
+
+    if (duplicate) {
+      throw new Error(`Slug '${slug}' sudah digunakan.`);
+    }
+
+    // Jangan simpan originalSlug sebagai properti series.
+    const {
+      originalSlug: _originalSlug,
+      bucket: _bucket,
+      ...fields
+    } = input;
+
+    const item = {
+      ...(previous || {}),
+      ...fields,
+      title: String(input.title).trim(),
+      slug,
+      description: String(input.description || ""),
+      genres: Array.isArray(input.genres) ? input.genres : [],
+      tags: Array.isArray(input.tags) ? input.tags : [],
+      chapters: previous?.chapters || [],
+      createdAt: previous?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (index >= 0) {
+      data.series[index] = item;
+    } else {
+      data.series.push(item);
+    }
+
+    return item;
   }
+);
+
+res.json({ ok: true, series: saved, bucket });
+
+  } catch (error) {
+  const message = error.message || "Terjadi kesalahan server.";
+
+  let status = 500;
+
+  if (message.includes("tidak ditemukan")) {
+    status = 404;
+  } else if (
+    message.includes("sudah digunakan") ||
+    message.includes("wajib diisi") ||
+    message.includes("tidak valid")
+  ) {
+    status = 400;
+  }
+
+  res.status(status).json({ error: message });
+}
 });
 
 /* ================= SAVE / UPDATE CHAPTER ================= */
