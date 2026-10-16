@@ -81,6 +81,7 @@ function getSeriesDate(series) {
   return new Date(date).getTime() || 0;
 }
 
+
 function toCard(series) {
   const chapter = series?.chapters?.[0];
 
@@ -95,8 +96,13 @@ function toCard(series) {
       series?.updatedAt ||
       null,
     badge: series.type || "UP",
+
+    // Sertakan genre dan tag agar bisa difilter di frontend
+    genres: Array.isArray(series.genres) ? series.genres : [],
+    tags: Array.isArray(series.tags) ? series.tags : [],
   };
 }
+
 
 /* ================= PUBLIC DATA READER ================= */
 
