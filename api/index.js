@@ -1,7 +1,8 @@
-
 // api/index.js
 import express from "express";
 import cors from "cors";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const app = express();
 
@@ -34,6 +35,28 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 
 const BUCKETS = ["data1", "data2", "data3"];
 const CACHE_TTL = 10_000;
+
+/* ================= R2 UPLOAD ================= */
+
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  },
+});
+
+// Tipe file gambar yang diizinkan -> ekstensi file di R2
+const EXT = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+// Jenis upload yang diizinkan
+const UPLOAD_KINDS = new Set(["cover", "backdrop", "chapter"]);
 
 let cache = { data: null, ts: 0 };
 
@@ -992,6 +1015,53 @@ app.delete(
     }
   }
 );
+
+/* ================= UPLOAD URL (R2) ================= */
+
+app.post("/admin/upload-url", requireAdmin, async (req, res) => {
+  try {
+    const { kind, contentType } = req.body || {};
+    const slug = makeSlug(req.body?.slug || "");
+    const ext = EXT[contentType];
+
+    if (!UPLOAD_KINDS.has(kind) || !slug || !ext) {
+      return res.status(400).json({ error: "kind, slug, atau contentType tidak valid." });
+    }
+
+    const rand = Math.random().toString(36).slice(2, 8);
+    let key;
+
+    if (kind === "chapter") {
+      const chapter = Number(req.body?.chapter);
+      const index = Number(req.body?.index);
+
+      if (!Number.isFinite(chapter) || chapter < 0 || !Number.isInteger(index) || index < 1) {
+        return res.status(400).json({ error: "chapter atau index tidak valid." });
+      }
+
+      key = `chapters/${slug}/${chapter}/${String(index).padStart(3, "0")}-${rand}.${ext}`;
+    } else {
+      key = `${kind === "cover" ? "covers" : "backdrops"}/${slug}-${rand}.${ext}`;
+    }
+
+    const uploadUrl = await getSignedUrl(
+      s3,
+      new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET,
+        Key: key,
+        ContentType: contentType,
+      }),
+      { expiresIn: 300 }
+    );
+
+    res.json({
+      uploadUrl,
+      publicUrl: `${process.env.R2_PUBLIC_BASE}/${key}`,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /* ================= UNKNOWN ENDPOINT ================= */
 
